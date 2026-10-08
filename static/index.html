@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Bulk certificate generation platform">
+  <title>CertiFlow | Bulk Certificate Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #172033;
+      background: #f5f7fb;
+      font-synthesis: none;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    button, input { font: inherit; }
+    
+    .app-shell { min-height: 100vh; display: flex; }
+    
+    /* Sidebar */
+    .sidebar {
+      width: 245px;
+      background: #122235;
+      color: #fff;
+      padding: 22px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 28px;
+    }
+    .brand { display: flex; gap: 11px; align-items: center; cursor: pointer; }
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: #2c5d80;
+      display: grid;
+      place-items: center;
+    }
+    .brand strong { display: block; font-size: 17px; }
+    .brand small { display: block; color: #aab9c8; font-size: 11px; margin-top: 2px; }
+    .sidebar nav { display: grid; gap: 6px; }
+    .nav-item {
+      border: 0;
+      background: transparent;
+      color: #bdc9d5;
+      padding: 11px 12px;
+      border-radius: 9px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      text-align: left;
+      cursor: pointer;
+      font-size: 13.5px;
+      font-weight: 500;
+      transition: all 0.15s ease;
+    }
+    .nav-item.active, .nav-item:hover { background: #1e354c; color: #fff; }
+    .sidebar-note {
+      margin-top: auto;
+      display: flex;
+      gap: 9px;
+      background: #182d42;
+      border: 1px solid #294158;
+      border-radius: 10px;
+      padding: 12px;
+      color: #dce6ee;
+      font-size: 12px;
+    }
+    .sidebar-note p { margin: 5px 0 0; color: #9fb0c0; line-height: 1.45; }
+    
+    /* Main Layout */
+    .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .topbar {
+      height: 60px;
+      background: #fff;
+      border-bottom: 1px solid #e5e9ef;
+      padding: 0 34px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: #647084;
+      font-size: 13px;
+    }
+    .status-pill { display: flex; gap: 7px; align-items: center; font-weight: 500; }
+    .status-green { width: 7px; height: 7px; border-radius: 50%; background: #2da66b; }
+    
+    /* Pages */
+    .page { max-width: 1180px; width: 100%; margin: 0 auto; padding: 34px; }
+    .page.narrow { max-width: 1050px; }
+    .hero-row { display: flex; justify-content: space-between; gap: 24px; align-items: flex-end; margin-bottom: 25px; }
+    .hero-row.compact { align-items: center; }
+    .eyebrow { font-size: 11px; letter-spacing: .12em; font-weight: 800; color: #55708c; margin: 0 0 8px; text-transform: uppercase; }
+    .hero-row h1, .section-heading h1 { margin: 0; font-size: 32px; letter-spacing: -.03em; color: #152337; font-weight: 800; }
+    .lede { color: #6b7789; max-width: 720px; line-height: 1.55; margin: 9px 0 0; font-size: 14px; }
+    
+    /* Buttons */
+    .primary, .secondary {
+      border: 0;
+      border-radius: 8px;
+      padding: 11px 15px;
+      display: inline-flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 13.5px;
+      text-decoration: none;
+      transition: all 0.15s ease;
+    }
+    .primary { background: #183b59; color: #fff; }
+    .primary:hover { background: #204b70; }
+    .primary:disabled { opacity: .6; cursor: not-allowed; }
+    .secondary { background: #eef2f6; color: #243a50; }
+    .secondary:hover { background: #e2e8f0; }
+    
+    /* Stats Grid */
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 22px; }
+    .stat-card, .card, .progress-card { background: #fff; border: 1px solid #e4e8ee; border-radius: 12px; }
+    .stat-card { padding: 17px; }
+    .stat-card span { display: block; color: #778397; font-size: 12px; margin: 12px 0 4px; font-weight: 500; }
+    .stat-card strong { font-size: 25px; color: #152337; font-weight: 800; }
+    .stat-icon { width: 32px; height: 32px; border-radius: 8px; display: grid; place-items: center; }
+    .blue { background: #e8f0f8; color: #315f82; }
+    .green { background: #e7f6ee; color: #24774e; }
+    .amber { background: #fff3dc; color: #9a6a18; }
+    .red { background: #fdeaea; color: #9c3d3d; }
+    
+    /* Cards */
+    .card { padding: 20px; margin-bottom: 18px; }
+    .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .card h2 { font-size: 17px; margin: 0 0 4px; color: #152337; font-weight: 700; }
+    .card-head p, .muted { margin: 0; color: #7b8696; font-size: 12px; }
+    .icon-btn { border: 1px solid #e1e6ed; background: #fff; color: #647084; border-radius: 7px; padding: 8px; display: inline-grid; place-items: center; cursor: pointer; }
+    .icon-btn:hover { background: #f8fafc; border-color: #cbd5e1; }
+    .danger-icon { color: #b44a4a; }
+    .danger-icon:hover { background: #fee2e2; border-color: #fca5a5; }
+    
+    /* Empty State */
+    .empty { text-align: center; padding: 55px 20px; color: #778397; }
+    .empty h3 { margin: 10px 0 5px; color: #29394b; font-size: 16px; }
+    .empty p { margin: 0 0 16px; font-size: 13px; }
+    .empty-icon { margin: auto; width: 44px; height: 44px; border-radius: 12px; background: #eef2f6; display: grid; place-items: center; color: #64748b; }
+    
+    /* Tables */
+    .table-wrap { overflow: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; color: #8290a0; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; font-weight: 750; padding: 10px 12px; border-bottom: 1px solid #edf0f4; }
+    td { padding: 13px 12px; border-bottom: 1px solid #edf0f4; color: #475467; vertical-align: middle; }
+    tbody tr { cursor: pointer; transition: background 0.15s ease; }
+    tbody tr:hover { background: #fafbfd; }
+    td strong { display: block; color: #24364a; font-weight: 600; font-size: 13.5px; }
+    td small { display: block; color: #8792a1; margin-top: 3px; font-size: 11.5px; }
+    
+    /* Badges */
+    .badge { display: inline-flex; align-items: center; gap: 6px; border-radius: 99px; padding: 5px 9px; text-transform: capitalize; font-size: 11px; font-weight: 750; }
+    .badge-success { background: #e8f7ef; color: #21764c; }
+    .badge-danger { background: #fdecec; color: #a33e3e; }
+    .badge-info { background: #eaf2fa; color: #2f6388; }
+    .badge-neutral { background: #eef1f5; color: #697586; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    
+    /* Navigation / Back */
+    .back { border: 0; background: transparent; color: #5d6d80; padding: 0; margin-bottom: 22px; display: flex; align-items: center; gap: 7px; cursor: pointer; font-weight: 600; font-size: 13px; }
+    .back:hover { color: #1e293b; }
+    .button-row { display: flex; gap: 9px; align-items: center; }
+    .link-button { white-space: nowrap; }
+    
+    /* Progress Card */
+    .progress-card { padding: 20px; margin-bottom: 18px; }
+    .progress-top { display: flex; justify-content: space-between; color: #697586; font-size: 12px; align-items: baseline; }
+    .progress-top strong { color: #24364a; font-size: 15px; }
+    .progress { height: 10px; background: #edf1f5; border-radius: 99px; overflow: hidden; margin: 14px 0; }
+    .progress span { display: block; height: 100%; background: #315d7c; border-radius: 99px; transition: width .3s ease; }
+    .mini-stats { display: flex; gap: 18px; color: #687587; font-size: 12px; }
+    .mini-stats span { display: flex; gap: 5px; align-items: center; font-weight: 500; }
+    .table-link { display: inline-flex; gap: 5px; align-items: center; color: #315d7c; font-weight: 700; text-decoration: none; cursor: pointer; }
+    .table-link:hover { text-decoration: underline; }
+    .error-text { color: #ad4a4a !important; max-width: 300px; display: block; font-size: 11.5px; margin-top: 4px; }
+    
+    /* Form */
+    .form-grid { display: grid; gap: 18px; }
+    .form-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 18px; }
+    .form-cols label { display: grid; gap: 7px; font-size: 12px; color: #586779; font-weight: 700; }
+    .form-cols input, .recipient-row input { border: 1px solid #dbe1e8; border-radius: 8px; padding: 10px 11px; outline: 0; color: #24364a; background: #fff; font-size: 13px; }
+    .form-cols input:focus, .recipient-row input:focus { border-color: #7595ad; box-shadow: 0 0 0 3px #edf3f7; }
+    .upload-btn { border: 1px solid #dce3ea; background: #fff; border-radius: 8px; padding: 8px 11px; display: flex; gap: 6px; align-items: center; cursor: pointer; color: #35556e; font-size: 12px; font-weight: 750; }
+    .upload-btn input { display: none; }
+    .recipient-head, .recipient-row { display: grid; grid-template-columns: 1fr 1.2fr 38px; gap: 10px; align-items: center; }
+    .recipient-head { font-size: 10px; color: #8792a1; text-transform: uppercase; padding: 0 2px 7px; font-weight: 700; }
+    .recipient-row { margin-bottom: 8px; }
+    .recipient-row input { width: 100%; min-width: 0; }
+    .add-row { border: 0; background: transparent; color: #315d7c; font-weight: 750; display: flex; align-items: center; gap: 6px; padding: 9px 2px; cursor: pointer; font-size: 13px; }
+    .add-row:hover { color: #1e3b52; }
+    .csv-tip { margin-top: 15px; border: 1px dashed #d7dfe7; border-radius: 99px; border-radius: 9px; padding: 12px; display: flex; gap: 9px; color: #718093; font-size: 12px; align-items: flex-start; }
+    .csv-tip strong { color: #44576b; }
+    .csv-tip p { margin: 4px 0; }
+    .text-button { display: inline-flex; align-items: center; gap: 6px; margin-top: 8px; border: 0; background: transparent; color: #315d7c; font-weight: 700; cursor: pointer; padding: 0; font-size: 12px; }
+    .text-button:hover { text-decoration: underline; }
+    .error-box { background: #fff0f0; color: #a23e3e; border: 1px solid #f0caca; border-radius: 9px; padding: 11px 13px; margin: 16px 0; font-size: 13px; }
+    .submit-row { display: flex; justify-content: space-between; gap: 20px; align-items: center; color: #748092; font-size: 12px; margin-top: 18px; }
+    .section-heading { margin-bottom: 20px; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: #5f7184; background: #edf2f7; padding: 2px 6px; border-radius: 4px; }
+    .form-grid .card { margin-bottom: 0; }
+
+    /* Modal for Preview */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(18, 34, 53, 0.7); backdrop-filter: blur(4px);
+      z-index: 100; display: flex; align-items: center; justify-content: center; padding: 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.2s ease;
+    }
+    .modal-backdrop.active { opacity: 1; pointer-events: auto; }
+    .modal-box {
+      background: #fff; border-radius: 12px; width: 100%; max-width: 900px; height: 85vh;
+      display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+    }
+    .modal-head {
+      padding: 14px 20px; border-bottom: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;
+    }
+    .modal-head h3 { margin: 0; font-size: 16px; color: #152337; }
+    .modal-frame { flex: 1; border: none; width: 100%; height: 100%; background: #e2e8f0; }
+
+    @media (max-width: 900px) {
+      .sidebar { width: 200px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .recipient-head { display: none; }
+      .recipient-row { grid-template-columns: 1fr 1fr 1fr 1fr 38px; }
+      .page { padding: 25px; }
+      .hero-row { align-items: flex-start; flex-direction: column; }
+    }
+    @media (max-width: 650px) {
+      .app-shell { display: block; }
+      .sidebar { width: auto; padding: 12px; gap: 12px; }
+      .sidebar nav { display: flex; }
+      .sidebar-note { display: none; }
+      .topbar { padding: 0 16px; }
+      .page { padding: 18px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; }
+      .form-cols { grid-template-columns: 1fr; }
+      .recipient-row { grid-template-columns: 1fr; }
+      .submit-row { align-items: stretch; flex-direction: column; }
+      .hero-row h1, .section-heading h1 { font-size: 26px; }
+      .button-row { flex-wrap: wrap; }
+      .mini-stats { flex-wrap: wrap; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-shell">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="brand" onclick="navigateTo('dashboard')">
+        <div class="brand-icon">
+          <!-- Award Icon -->
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+        </div>
+        <div>
+          <strong>CertiFlow</strong>
+          <small>Bulk Certificate Studio</small>
+        </div>
+      </div>
+
+      <nav>
+        <button id="nav-dashboard" class="nav-item active" onclick="navigateTo('dashboard')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          Dashboard
+        </button>
+        <button id="nav-create" class="nav-item" onclick="navigateTo('create')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+          New generation
+        </button>
+      </nav>
+
+      <div class="sidebar-note">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
+        <div>
+          <strong>Assignment-ready</strong>
+          <p>Async bulk generation with job-level progress and downloadable PDFs.</p>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Section -->
+    <main class="main">
+      <header class="topbar">
+        <span>Certificate Operations</span>
+        <span class="status-pill">
+          <span class="status-green"></span> API connected
+        </span>
+      </header>
+
+      <!-- PAGE 1: DASHBOARD -->
+      <section id="page-dashboard" class="page">
+        <div class="hero-row">
+          <div>
+            <p class="eyebrow">OPERATIONS DASHBOARD</p>
+            <h1>Generate certificates at scale.</h1>
+            <p class="lede">Create one job, process every recipient in the background, and monitor exactly what succeeded or failed.</p>
+          </div>
+          <button class="primary" onclick="navigateTo('create')">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+            New generation
+          </button>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/><path d="M3 7.6v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8"/></svg>
+            </div>
+            <span>Total recipients</span>
+            <strong id="stat-total-recipients">0</strong>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon green">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <span>Certificates generated</span>
+            <strong id="stat-completed-certs">0</strong>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon amber">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 14 14"/></svg>
+            </div>
+            <span>Jobs</span>
+            <strong id="stat-jobs-count">0</strong>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon red">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            </div>
+            <span>Failures</span>
+            <strong id="stat-failed-certs">0</strong>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Generation jobs</h2>
+              <p>Every bulk request gets a traceable job ID.</p>
+            </div>
+            <button class="icon-btn" onclick="loadJobs()" title="Refresh">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
+            </button>
+          </div>
+
+          <div id="jobs-loading" class="empty" style="display: none;">Loading jobs...</div>
+          <div id="jobs-empty" class="empty" style="display: none;">
+            <div class="empty-icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15.5 2H8.6c-.4 0-.8.2-1.1.5-.3.3-.5.7-.5 1.1v12.8c0 .4.2.8.5 1.1.3.3.7.5 1.1.5h9.8c.4 0 .8-.2 1.1-.5.3-.3.5-.7.5-1.1V6.5L15.5 2z"/></svg>
+            </div>
+            <h3>No jobs yet</h3>
+            <p>Create your first bulk certificate job to see progress here.</p>
+            <button class="secondary" onclick="navigateTo('create')">Create job</button>
+          </div>
+
+          <div id="jobs-table-container" class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Recipients</th>
+                  <th>Result</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="jobs-tbody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- PAGE 2: CREATE JOB -->
+      <section id="page-create" class="page narrow" style="display: none;">
+        <button class="back" onclick="navigateTo('dashboard')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back to dashboard
+        </button>
+
+        <div class="section-heading">
+          <p class="eyebrow">NEW GENERATION JOB</p>
+          <h1>Build a certificate run</h1>
+          <p class="lede">Set the fixed template metadata once, then submit all recipients in one request.</p>
+        </div>
+
+        <div class="form-grid">
+          <!-- Card: Certificate Details -->
+          <div class="card">
+            <h2>Certificate details</h2>
+            <p class="muted">One predefined PDF design is used as required.</p>
+            <div class="form-cols">
+              <label>
+                Certificate title
+                <input id="form-title" value="Certificate of Completion" placeholder="Certificate of Completion">
+              </label>
+              <label>
+                Issue date
+                <input id="form-date" type="date">
+              </label>
+              <label>
+                Event / course *
+                <input id="form-course" placeholder="FastAPI Backend Workshop" value="FastAPI Backend Workshop">
+              </label>
+              <label>
+                Issuer name *
+                <input id="form-issuer" placeholder="Aereo Engineering Team" value="Aereo Engineering Team">
+              </label>
+            </div>
+          </div>
+
+          <!-- Card: Tabular Recipients -->
+          <div class="card">
+            <div class="card-head">
+              <div>
+                <h2>Recipients</h2>
+                <p id="recipients-count-label" class="muted">0 valid recipients ready to process.</p>
+              </div>
+              <label class="upload-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" x2="12" y1="3" y2="15"/></svg>
+                Import CSV
+                <input type="file" accept=".csv,text/csv" onchange="handleCsvFile(event)">
+              </label>
+            </div>
+
+            <div class="recipient-head">
+              <span>Name</span>
+              <span>Email</span>
+              <span></span>
+            </div>
+
+            <div id="recipients-list">
+              <!-- Tabular Rows Injected via JS -->
+            </div>
+
+            <button class="add-row" type="button" onclick="addRecipientRow()">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+              Add recipient
+            </button>
+
+            <div class="csv-tip">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h14a2 2 0 0 0 2-2V7.5L14.5 2H6a2 2 0 0 0-2 2v4"/><polyline points="14 2 14 8 20 8"/><path d="M2 15h10"/><path d="m9 18 3-3-3-3"/></svg>
+              <div>
+                <strong>CSV supported</strong>
+                <p>Headers: name, email. Quoted CSV fields are supported.</p>
+                <div style="display: flex; gap: 12px; margin-top: 6px;">
+                  <button class="text-button" type="button" onclick="downloadSampleCsv()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                    Download sample
+                  </button>
+                  <button class="text-button" type="button" onclick="loadSampleRecipients()">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>
+                    Load sample dataset
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="create-error" class="error-box" style="display: none;"></div>
+
+        <div class="submit-row">
+          <span>One API request &rarr; one tracked generation job &rarr; individual certificate files.</span>
+          <button id="btn-submit-job" class="primary" onclick="submitGenerationJob()">
+            Generate certificates
+          </button>
+        </div>
+      </section>
+
+      <!-- PAGE 3: JOB DETAIL -->
+      <section id="page-detail" class="page" style="display: none;">
+        <button class="back" onclick="navigateTo('dashboard')">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+          Back to dashboard
+        </button>
+
+        <div class="hero-row compact">
+          <div>
+            <p class="eyebrow">GENERATION JOB</p>
+            <h1 id="detail-course-name">Event Name</h1>
+            <p id="detail-meta-text" class="lede">Issuer Name &middot; Created Timestamp</p>
+          </div>
+          <div class="button-row">
+            <span id="detail-status-badge"></span>
+            <a id="detail-download-all-btn" class="secondary link-button" href="#" style="display: none;">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+              Download all
+            </a>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div class="progress-top">
+            <div>
+              <span>Overall progress</span>
+              <strong id="detail-progress-ratio">0 / 0</strong>
+            </div>
+            <strong id="detail-progress-percent">0%</strong>
+          </div>
+          <div class="progress">
+            <span id="detail-progress-bar" style="width: 0%;"></span>
+          </div>
+          <div class="mini-stats">
+            <span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #2da66b;"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+              <span id="detail-success-count">0</span> completed
+            </span>
+            <span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #b44a4a;"><circle cx="12" cy="12" r="10"/><line x1="15" x2="9" y1="9" y2="15"/><line x1="9" x2="15" y1="9" y2="15"/></svg>
+              <span id="detail-failed-count">0</span> failed
+            </span>
+            <span>
+              <span id="detail-remaining-count">0</span> remaining
+            </span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div>
+              <h2>Certificate results</h2>
+              <p class="muted">Each recipient is isolated so one failure does not stop the rest.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Recipient</th>
+                  <th>ID</th>
+                  <th>Status</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="detail-certs-tbody">
+                <!-- Injected via JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- MODAL: PDF PREVIEW -->
+  <div id="preview-modal" class="modal-backdrop">
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <h3 id="modal-title">Certificate Preview</h3>
+          <p id="modal-subtitle" style="margin: 2px 0 0; font-size: 11.5px; color: #64748b;"></p>
+        </div>
+        <div style="display: flex; gap: 8px;">
+          <a id="modal-download-btn" class="primary" style="padding: 7px 12px; font-size: 12px;" href="#" download>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download PDF
+          </a>
+          <button class="icon-btn" onclick="closePreviewModal()">&times;</button>
+        </div>
+      </div>
+      <iframe id="modal-iframe" class="modal-frame" src="about:blank"></iframe>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT APPLICATION LOGIC -->
+  <script>
+    let currentPage = 'dashboard';
+    let currentJobId = null;
+    let pollInterval = null;
+    let jobsCache = [];
+
+    // Set default date
+    document.getElementById('form-date').valueAsDate = new Date();
+
+    function getStatusBadge(status) {
+      const s = (status || 'pending').toLowerCase();
+      let tone = 'neutral';
+      if (s === 'completed' || s === 'generated') tone = 'success';
+      else if (s === 'failed' || s === 'error') tone = 'danger';
+      else if (s === 'processing') tone = 'info';
+      return `<span class="badge badge-${tone}"><span class="dot"></span>${s}</span>`;
+    }
+
+    // Navigation
+    function navigateTo(page, jobId = null) {
+      currentPage = page;
+      document.getElementById('page-dashboard').style.display = page === 'dashboard' ? 'block' : 'none';
+      document.getElementById('page-create').style.display = page === 'create' ? 'block' : 'none';
+      document.getElementById('page-detail').style.display = page === 'detail' ? 'block' : 'none';
+
+      document.getElementById('nav-dashboard').className = page === 'dashboard' || page === 'detail' ? 'nav-item active' : 'nav-item';
+      document.getElementById('nav-create').className = page === 'create' ? 'nav-item active' : 'nav-item';
+
+      if (page === 'dashboard') {
+        stopPolling();
+        currentJobId = null;
+        loadJobs();
+      } else if (page === 'create') {
+        stopPolling();
+        currentJobId = null;
+        initCreatePage();
+      } else if (page === 'detail' && jobId) {
+        currentJobId = jobId;
+        loadJobDetail(jobId);
+        startPollingDetail(jobId);
+      }
+    }
+
+    // API: Load Jobs for Dashboard
+    async function loadJobs() {
+      const loading = document.getElementById('jobs-loading');
+      const empty = document.getElementById('jobs-empty');
+      const container = document.getElementById('jobs-table-container');
+      const tbody = document.getElementById('jobs-tbody');
+
+      loading.style.display = 'block';
+      empty.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/v1/jobs');
+        if (!res.ok) throw new Error('Failed to fetch jobs');
+        const data = await res.json();
+        jobsCache = data.items || [];
+
+        loading.style.display = 'none';
+
+        let totalRecipients = 0;
+        let completedCerts = 0;
+        let failedCerts = 0;
+
+        tbody.innerHTML = '';
+
+        if (jobsCache.length === 0) {
+          empty.style.display = 'block';
+          container.style.display = 'none';
+        } else {
+          empty.style.display = 'none';
+          container.style.display = 'block';
+
+          jobsCache.forEach(j => {
+            totalRecipients += j.total_count;
+            completedCerts += j.success_count;
+            failedCerts += j.failed_count;
+
+            const tr = document.createElement('tr');
+            tr.onclick = () => navigateTo('detail', j.id);
+            tr.innerHTML = `
+              <td>
+                <strong>${escapeHtml(j.course_name)}</strong>
+                <small>${j.id.slice(0, 12)}… · ${escapeHtml(j.issuer_name)}</small>
+              </td>
+              <td>${j.total_count}</td>
+              <td>${j.success_count} success · ${j.failed_count} failed</td>
+              <td>${getStatusBadge(j.status)}</td>
+              <td style="text-align: right; color: #94a3b8;">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </td>
+            `;
+            tbody.appendChild(tr);
+          });
+        }
+
+        document.getElementById('stat-total-recipients').innerText = totalRecipients;
+        document.getElementById('stat-completed-certs').innerText = completedCerts;
+        document.getElementById('stat-jobs-count').innerText = jobsCache.length;
+        document.getElementById('stat-failed-certs').innerText = failedCerts;
+
+      } catch (err) {
+        loading.style.display = 'none';
+        console.error(err);
+      }
+    }
+
+    // CREATE JOB: Recipient Row Management
+    function initCreatePage() {
+      const list = document.getElementById('recipients-list');
+      if (!list || list.children.length === 0) {
+        loadSampleRecipients();
+      }
+      updateValidCount();
+    }
+
+    function addRecipientRow(name = '', email = '') {
+      const list = document.getElementById('recipients-list');
+      const row = document.createElement('div');
+      row.className = 'recipient-row';
+
+      row.innerHTML = `
+        <input class="r-name" placeholder="Aarav Sharma" value="${escapeHtml(name)}" oninput="updateValidCount()">
+        <input class="r-email" placeholder="aarav@example.com" value="${escapeHtml(email)}" oninput="updateValidCount()">
+        <button class="icon-btn danger-icon" type="button" onclick="removeRecipientRow(this)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+        </button>
+      `;
+      list.appendChild(row);
+      updateValidCount();
+    }
+
+    function removeRecipientRow(btn) {
+      const list = document.getElementById('recipients-list');
+      if (list.children.length > 1) {
+        btn.closest('.recipient-row').remove();
+      } else {
+        const inputs = btn.closest('.recipient-row').querySelectorAll('input');
+        inputs.forEach(i => i.value = '');
+      }
+      updateValidCount();
+    }
+
+    function updateValidCount() {
+      const rows = document.querySelectorAll('.recipient-row');
+      let valid = 0;
+      rows.forEach(r => {
+        const name = (r.querySelector('.r-name')?.value || '').trim();
+        const email = (r.querySelector('.r-email')?.value || '').trim();
+        if (name && email.includes('@')) valid++;
+      });
+      document.getElementById('recipients-count-label').innerText = `${valid} valid recipient${valid === 1 ? '' : 's'} ready to process.`;
+    }
+
+    function loadSampleRecipients() {
+      const list = document.getElementById('recipients-list');
+      list.innerHTML = '';
+      const samples = [
+        { name: "Aarav Sharma", email: "aarav@example.com" },
+        { name: "Priya Singh", email: "priya@example.com" },
+        { name: "Grace Hopper", email: "grace@example.com" },
+        { name: "Alan Turing", email: "alan@example.com" }
+      ];
+      samples.forEach(s => addRecipientRow(s.name, s.email));
+    }
+
+    function downloadSampleCsv() {
+      const content = ["name,email",
+        'Aarav Sharma,aarav@example.com',
+        'Priya Singh,priya@example.com'
+      ].join("\n");
+      const blob = new Blob([content], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = "certificate-recipients-example.csv";
+      a.click();
+    }
+
+    function handleCsvFile(e) {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const text = evt.target.result;
+        const rows = text.split(/\r?\n/).filter(line => line.trim());
+        if (!rows.length) return;
+
+        const list = document.getElementById('recipients-list');
+        list.innerHTML = '';
+        let added = 0;
+
+        // Simple CSV parser
+        rows.forEach((rowStr, idx) => {
+          const parts = rowStr.split(',').map(s => s.trim().replace(/^["']|["']$/g, ''));
+          if (idx === 0 && (parts[0].toLowerCase().includes('name') || parts[1]?.toLowerCase().includes('email'))) {
+            return; // skip header
+          }
+          if (parts.length >= 2 && parts[0] && parts[1]) {
+            addRecipientRow(parts[0], parts[1]);
+            added++;
+          }
+        });
+
+        if (added === 0) {
+          alert('Could not find valid recipient data in CSV. Ensure columns: name, email');
+          addRecipientRow();
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    // Submit New Job
+    async function submitGenerationJob() {
+      const errBox = document.getElementById('create-error');
+      errBox.style.display = 'none';
+
+      const title = document.getElementById('form-title').value.trim() || 'Certificate of Completion';
+      const course = document.getElementById('form-course').value.trim();
+      const issuer = document.getElementById('form-issuer').value.trim();
+      const date = document.getElementById('form-date').value || null;
+
+      if (!course || !issuer) {
+        errBox.innerText = 'Event / course name and issuer name are required.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const rows = document.querySelectorAll('.recipient-row');
+      const recipients = [];
+      rows.forEach(r => {
+        const name = (r.querySelector('.r-name')?.value || '').trim();
+        const email = (r.querySelector('.r-email')?.value || '').trim().toLowerCase();
+        if (name || email) {
+          recipients.push({ recipient_name: name, recipient_email: email });
+        }
+      });
+
+      if (!recipients.length || recipients.some(r => r.recipient_name.length < 2 || !r.recipient_email.includes('@'))) {
+        errBox.innerText = 'Every recipient must have a valid name and email address.';
+        errBox.style.display = 'block';
+        return;
+      }
+
+      const btn = document.getElementById('btn-submit-job');
+      btn.disabled = true;
+      btn.innerText = 'Creating job...';
+
+      try {
+        const res = await fetch('/api/v1/jobs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title,
+            course_name: course,
+            issuer_name: issuer,
+            issue_date: date,
+            recipients
+          })
+        });
+
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.detail ? (typeof err.detail === 'string' ? err.detail : JSON.stringify(err.detail)) : 'Failed to create job');
+        }
+
+        const data = await res.json();
+        navigateTo('detail', data.job_id);
+
+      } catch (err) {
+        errBox.innerText = err.message || 'Unable to create job';
+        errBox.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = 'Generate certificates';
+      }
+    }
+
+    // JOB DETAIL & CERTIFICATE RESULTS
+    async function loadJobDetail(jobId) {
+      try {
+        const [jobRes, certsRes] = await Promise.all([
+          fetch(`/api/v1/jobs/${jobId}`),
+          fetch(`/api/v1/jobs/${jobId}/certificates`)
+        ]);
+
+        if (!jobRes.ok) return;
+        const job = await jobRes.json();
+        const certsData = certsRes.ok ? await certsRes.json() : { items: [] };
+
+        renderJobDetailView(job, certsData.items || []);
+
+        if (job.status === 'COMPLETED' || job.status === 'FAILED') {
+          stopPolling();
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderJobDetailView(job, certs) {
+      document.getElementById('detail-course-name').innerText = job.course_name;
+      document.getElementById('detail-meta-text').innerText = `${job.issuer_name} · Created ${new Date(job.created_at).toLocaleString()}`;
+      document.getElementById('detail-status-badge').innerHTML = getStatusBadge(job.status);
+
+      const downloadAllBtn = document.getElementById('detail-download-all-btn');
+      if (job.success_count > 0) {
+        downloadAllBtn.href = `/api/v1/jobs/${job.id}/download-all`;
+        downloadAllBtn.style.display = 'inline-flex';
+      } else {
+        downloadAllBtn.style.display = 'none';
+      }
+
+      const finished = job.success_count + job.failed_count;
+      document.getElementById('detail-progress-ratio').innerText = `${finished} / ${job.total_count}`;
+      document.getElementById('detail-progress-percent').innerText = `${job.progress_percentage}%`;
+      document.getElementById('detail-progress-bar').style.width = `${job.progress_percentage}%`;
+
+      document.getElementById('detail-success-count').innerText = job.success_count;
+      document.getElementById('detail-failed-count').innerText = job.failed_count;
+      document.getElementById('detail-remaining-count').innerText = Math.max(0, job.total_count - finished);
+
+      const tbody = document.getElementById('detail-certs-tbody');
+      tbody.innerHTML = '';
+
+      certs.forEach(c => {
+        const tr = document.createElement('tr');
+        const isGenerated = c.status === 'GENERATED';
+
+        tr.innerHTML = `
+          <td>
+            <strong>${escapeHtml(c.recipient_name)}</strong>
+            <small>${escapeHtml(c.recipient_email)}</small>
+          </td>
+          <td><code>${c.id.slice(0, 12)}…</code></td>
+          <td>
+            ${getStatusBadge(c.status)}
+            ${c.error_message ? `<small class="error-text">${escapeHtml(c.error_message)}</small>` : ''}
+          </td>
+          <td style="text-align: right;">
+            ${isGenerated ? `
+              <div style="display: inline-flex; gap: 8px;">
+                <span class="table-link" onclick="openPreview('${c.id}', '${escapeJs(c.recipient_name)}')">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  Preview
+                </span>
+                <a class="table-link" href="/api/v1/certificates/${c.id}" download>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                  PDF
+                </a>
+              </div>
+            ` : ''}
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function startPollingDetail(jobId) {
+      stopPolling();
+      pollInterval = setInterval(() => {
+        if (currentJobId === jobId && currentPage === 'detail') {
+          loadJobDetail(jobId);
+        }
+      }, 1500);
+    }
+
+    function stopPolling() {
+      if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = null;
+      }
+    }
+
+    // Modal PDF Preview
+    function openPreview(certId, recipientName) {
+      document.getElementById('modal-title').innerText = `Certificate: ${recipientName}`;
+      document.getElementById('modal-subtitle').innerText = `ID: ${certId}`;
+      document.getElementById('modal-download-btn').href = `/api/v1/certificates/${certId}`;
+      document.getElementById('modal-iframe').src = `/api/v1/certificates/${certId}?inline=true`;
+      document.getElementById('preview-modal').classList.add('active');
+    }
+
+    function closePreviewModal() {
+      document.getElementById('modal-iframe').src = 'about:blank';
+      document.getElementById('preview-modal').classList.remove('active');
+    }
+
+    // Utilities
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+    function escapeJs(str) {
+      if (!str) return '';
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // Init
+    window.onload = () => {
+      loadJobs();
+    };
+  </script>
+</body>
+</html>
