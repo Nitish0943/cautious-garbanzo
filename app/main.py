@@ -1,4 +1,6 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
@@ -6,6 +8,8 @@ from app.core.database import engine
 from app.models.base import Base
 from app.api.routes import jobs, certificates
 from app.utils.logger import logger
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
 @asynccontextmanager
@@ -37,7 +41,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from pathlib import Path
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -46,14 +49,14 @@ app.include_router(jobs.router, prefix=settings.API_V1_STR)
 app.include_router(certificates.router, prefix=settings.API_V1_STR)
 
 # Mount static files if present
-static_dir = Path("static")
+static_dir = PROJECT_ROOT / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 @app.get("/", tags=["Dashboard"])
 def root():
-    index_file = Path("static/index.html")
+    index_file = PROJECT_ROOT / "static" / "index.html"
     if index_file.exists():
         return FileResponse(index_file)
     return {

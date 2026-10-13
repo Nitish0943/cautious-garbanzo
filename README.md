@@ -216,6 +216,19 @@ The interactive OpenAPI documentation will be available at:
 
 ---
 
+### Option C: Vercel
+
+This repository includes [`api/index.py`](./api/index.py) and [`vercel.json`](./vercel.json) so Vercel can discover and route the FastAPI ASGI application.
+
+1. Import the repository into Vercel and keep the project root set to the repository root.
+2. Deploy once. The `/`, `/health`, `/docs`, and `/api/v1/*` routes are handled by the FastAPI function.
+3. For persistent data, add a hosted PostgreSQL connection string as the `DATABASE_URL` environment variable (Neon is a suitable option). Vercel's local filesystem and the fallback SQLite database under `/tmp` are temporary.
+4. Add `STORAGE_DIR=/tmp/certiflow-generated` if generated PDFs are only needed during the request. For durable downloads, use object storage and replace the local file storage implementation.
+
+Do not use the Docker Compose database hostname on Vercel; `db` is only resolvable inside the Compose network.
+
+---
+
 ## 6. Environment Variables
 
 | Variable | Default Value | Description |
@@ -492,4 +505,3 @@ tests/test_validation.py::test_reject_short_recipient_name PASSED
 
 ============================= 15 passed in 0.84s ==============================
 ```
-

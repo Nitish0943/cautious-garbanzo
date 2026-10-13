@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -27,6 +28,11 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+if os.getenv("VERCEL") and settings.DATABASE_URL == "sqlite:///./certiflow.db":
+    settings.DATABASE_URL = "sqlite:////tmp/certiflow.db"
+    settings.STORAGE_DIR = Path("/tmp/certiflow-generated")
+    settings.TEMPLATES_DIR = Path("/tmp/certiflow-templates")
 
 # Ensure directories exist
 settings.STORAGE_DIR.mkdir(parents=True, exist_ok=True)
